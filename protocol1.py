@@ -11,6 +11,7 @@ class input_controller:
         self.current = set()
 
         self.type = type.lower()
+        self.activate = True
 
     def on_press(self, key):
         try:
@@ -18,18 +19,10 @@ class input_controller:
                 self.current.add(key)
 
                 if all(k in self.current for k in self.COMBO):
-                    if self.suppressed:
-                        self.suppressed = False
-                        print("Stopping")
-                        if "x" in self.type:
-                            self.mouse_listener.stop()
-                    else:
-                        print("Continuing")
-                        self.suppressed = True
-                        if "x" in self.type:
-                            self.mouse_listener = pynput.mouse.Listener(suppress=True)
-                            self.mouse_listener.start()
-                    time.sleep(1)
+                    print("Stopping")
+                    if "x" in self.type:
+                        self.mouse_listener.stop()
+                        self.activate = False
         except:
             pass
 
@@ -37,7 +30,6 @@ class input_controller:
         try:
             if key in self.COMBO:
                 self.current.remove(key)
-            time.sleep(1)
         except:
             pass
 
@@ -45,49 +37,20 @@ class input_controller:
         self.keyboard_listener = pynput.keyboard.Listener(on_press=self.on_press,
                                                           on_release=self.on_release)
         self.mouse_listener = pynput.mouse.Listener(suppress=True)
-        self.suppressed = False
 
         self.keyboard_listener.start()
 
         if "x" in self.type:
             self.mouse_listener.start()
             print("Disabling mouse")
-            self.suppressed = True
 
-        while True:
-            if self.keyboard_listener.running:
-                pass
-            if self.mouse_listener.running:
-                pass
-
-
-
-def main(type):
-    def on_press(self, key):
-        time.sleep(1)
-        if key in self.COMBO:
-            self.current.add(key)
-
-            if all(k in self.current for k in self.COMBO):
-                if "x" in self.type:
-                    self.mouse_listener.stop()
-
-    def on_release(self, key):
-        if key in self.COMBO:
-            self.current.remove(key)
-            print("Released")
-        time.sleep(1)
-
-    keyboard_listener = pynput.keyboard.Listener(on_press=on_press,
-                                                 on_release=on_release,
-                                                 suppress=True)
-    mouse_listener = pynput.mouse.Listener(suppress=True)
-
-    while True:
-        if "x" in type:
-            if not mouse_listener.running:
-                mouse_listener.start()
-                print("Disabling mouse")
+        while self.activate:
+            # if self.keyboard_listener.running:
+            #     pass
+            # if self.mouse_listener.running:
+            #     pass
+            time.sleep(.1)
+            pass
 
 
 if __name__ == '__main__':
@@ -103,4 +66,3 @@ if __name__ == '__main__':
     # controller = input_controller(args.type)
     controller = input_controller("x")
     controller.run()
-    # main("x")
