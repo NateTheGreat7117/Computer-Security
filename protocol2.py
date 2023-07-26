@@ -1,20 +1,44 @@
 import pyautogui
 import argparse
+import keyboard
+import time
 import cv2
+import os
 
 
-def main(type):
+def main(record_time):
     cap = cv2.VideoCapture(0)
 
     fourcc = cv2.VideoWriter_fourcc(*'XVID')
-    out = cv2.VideoWriter('output.avi', fourcc, 20.0, (640, 480))
+    recordings = os.listdir("recordings")
+    index = 0
+    if len(recordings) > 0:
+        index = int(recordings[-1][-5])
+    out = cv2.VideoWriter(f'recordings/output{index+1}.avi', fourcc, 20.0, (640, 480))
 
-    pyautogui.hotKey("winleft", "altleft", "r")
+    pyautogui.hotkey("winleft", "altleft", "r")
+
+    capture = True
+    print("Starting")
 
     while True:
         ret, frame = cap.read()
 
-        out.write(frame)
+        if capture:
+            out.write(frame)
+        else:
+            out.release()
+
+        if keyboard.is_pressed("ctrl") and keyboard.is_pressed("alt") and keyboard.is_pressed("a"):
+            if not capture:
+                out = cv2.VideoWriter(f'recordings/output{index}.avi', fourcc, 20.0, (640, 480))
+                print("Starting")
+            else:
+                print("Stopping")
+            capture = not capture
+            time.sleep(.5)
+            pyautogui.hotkey("winleft", "altleft", "r")
+            index += 1
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
@@ -22,6 +46,7 @@ def main(type):
     cap.release()
     out.release()
     cv2.destroyAllWindows()
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='''
