@@ -21,6 +21,8 @@ def main(record_time):
     capture = True
     print("Starting")
 
+    start = time.time()
+
     while True:
         ret, frame = cap.read()
 
@@ -29,10 +31,12 @@ def main(record_time):
         else:
             out.release()
 
-        if keyboard.is_pressed("ctrl") and keyboard.is_pressed("alt") and keyboard.is_pressed("a"):
+        if (keyboard.is_pressed("ctrl") and keyboard.is_pressed("alt") and keyboard.is_pressed("a")) or \
+            (capture and 0 < int(record_time) < time.time() - start):
             if not capture:
                 out = cv2.VideoWriter(f'recordings/output{index}.avi', fourcc, 20.0, (640, 480))
                 print("Starting")
+                start = time.time()
             else:
                 print("Stopping")
             capture = not capture
