@@ -1,6 +1,9 @@
+from playsound import playsound
+import pyautogui
 import argparse
 import pynput
 import time
+import math
 import os
 
 
@@ -17,6 +20,8 @@ class controller:
         self.mouse_listener = pynput.mouse.Listener(on_move=self.on_move,
                                                     on_click=self.on_click,
                                                     on_scroll=self.on_scroll)
+
+        self.play_audio = True
 
     def on_press(self, key):
         self.start = time.time()
@@ -37,6 +42,8 @@ class controller:
 
                 # Check if hotkey is pressed
                 if all(k in self.current for k in self.COMBO):
+                    if self.play_audio:
+                        self.play_audio = False
                     if self.mouse_listener.running:
                         self.mouse_listener.stop()
                     mouse_listener = pynput.mouse.Listener(on_move=self.on_move,
@@ -61,13 +68,14 @@ class controller:
         except Exception:
             pass
 
-    def run(self, type, deactive_time):
+    def run(self, type, deactive_time, volume):
         self.keyboard_listener.start()
         self.mouse_listener.start()
 
         while True:
             global start
             if time.time() - self.start >= deactive_time:
+                self.play_audio = True
                 if self.keyboard_listener.running and not self.suppressed:
                     self.keyboard_listener.stop()
                 if self.mouse_listener.running and not self.suppressed:
@@ -77,7 +85,12 @@ class controller:
                     os.system("rundll32.exe powrprof.dll,SetSuspendState 0,1,0")
                     break
                 if "t" in type:
-                    pass
+                    if volume != -1:
+                        pyautogui.press('volumedown', presses=50)
+                        x = math.floor(volume / 2)
+                        pyautogui.press('volumeup', presses=x)
+                    while self.play_audio:
+                        playsound('recordings/iphone_alarm.mp3')
                 if "u" in type or "w" in type:
                     if not self.suppressed:
                         self.keyboard_listener = pynput.keyboard.Listener(on_press=self.on_deactivate,
@@ -105,8 +118,10 @@ if __name__ == '__main__':
                         help="the functions to enable when there is no activity detected(s=put computer to sleep,t=play audio,u=disable keyboard,v=disable mouse,w=disable inputs(keyboard, mouse),x=stop audio audio,y=pause,z=all")
     parser.add_argument("--time", type=int, default=300,
                         help="the amount of time with no activity detected on the computer before something happens")
+    parser.add_argument("--volume", type=int, default=-1,
+                        help="the volume to play the audio if it is chosen. -1 to keep the volume the same")
 
     args = parser.parse_args()
 
     pc_controller = controller()
-    pc_controller.run(args.type, args.time)
+    pc_controller.run(args.type, args.time, args.volume)
