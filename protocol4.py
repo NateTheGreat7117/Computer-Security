@@ -22,6 +22,8 @@ class controller:
                                                     on_scroll=self.on_scroll)
 
         self.play_audio = True
+        self.muted = True
+        self.paused = True
 
     def on_press(self, key):
         self.start = time.time()
@@ -58,6 +60,10 @@ class controller:
                     self.keyboard_listener.start()
                     self.start = time.time()
                     self.suppressed = False
+                    if self.muted:
+                        pyautogui.press("volumemute")
+                    if self.paused:
+                        pyautogui.press("playpause")
         except Exception as e:
             print(e)
 
@@ -107,6 +113,12 @@ class controller:
                         self.mouse_listener.start()
                         print("Disabling mouse")
                         self.suppressed = True
+                if "x" in type:
+                    pyautogui.press("volumemute")
+                    self.muted = True
+                if "y" in type:
+                    pyautogui.press("playpause")
+                    self.paused = True
 
 
 if __name__ == '__main__':
@@ -115,7 +127,7 @@ if __name__ == '__main__':
     ''')
 
     parser.add_argument("--type", type=str, default="x",
-                        help="the functions to enable when there is no activity detected(s=put computer to sleep,t=play audio,u=disable keyboard,v=disable mouse,w=disable inputs(keyboard, mouse),x=stop audio audio,y=pause,z=all")
+                        help="the functions to enable when there is no activity detected(s=put computer to sleep,t=play audio,u=disable keyboard,v=disable mouse,w=disable inputs(keyboard, mouse),x=mute audio,y=pause,z=all")
     parser.add_argument("--time", type=int, default=300,
                         help="the amount of time with no activity detected on the computer before something happens")
     parser.add_argument("--volume", type=int, default=-1,
