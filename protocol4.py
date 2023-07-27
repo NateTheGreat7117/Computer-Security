@@ -3,98 +3,97 @@ import pynput
 import time
 import os
 
-start = time.time()
-COMBO = {pynput.keyboard.Key.ctrl_l,
-         pynput.keyboard.Key.alt_l,
-         pynput.keyboard.KeyCode(char="a")}
-current = set()
-suppressed = False
 
+class controller:
+    def __init__(self):
+        self.start = time.time()
+        self.COMBO = {pynput.keyboard.Key.ctrl_l,
+                      pynput.keyboard.Key.alt_l,
+                      pynput.keyboard.KeyCode(char="a")}
+        self.current = set()
+        self.suppressed = False
 
-def on_press(key):
-    global start
-    start = time.time()
+        self.keyboard_listener = pynput.keyboard.Listener(on_press=self.on_press)
+        self.mouse_listener = pynput.mouse.Listener(on_move=self.on_move,
+                                                    on_click=self.on_click,
+                                                    on_scroll=self.on_scroll)
 
+    def on_press(self, key):
+        self.start = time.time()
 
-def on_deactivate(key):
-    global keyboard_listener
-    global mouse_listener
-    global suppressed
-    global COMBO
-    global current
-    global start
+    def on_move(self, x, y):
+        self.start = time.time()
 
-    try:
-        if key in COMBO:
-            current.add(key)
+    def on_click(self, x, y, button, pressed):
+        self.start = time.time()
 
-            if all(k in current for k in COMBO):
-                if "u" in functions or "w" in functions:
-                    keyboard_listener.stop()
-                    keyboard_listener = pynput.keyboard.Listener(on_press=on_press)
-                    keyboard_listener.start()
-                if "v" in functions or "w" in functions:
-                    mouse_listener.stop() # Free mouse
-                    keyboard_listener.stop()
-                    mouse_listener = pynput.mouse.Listener() # Create to mouse listener
-                    mouse_listener.start() # Start mouse listener
-                    keyboard_listener = pynput.keyboard.Listener(on_press=on_press) # Create new keyboard listener
-                    keyboard_listener.start() # Start listening for key presses
-                start = time.time()
-                suppressed = False
-                print("hotkey detected")
-    except Exception as e:
-        print(e)
+    def on_scroll(self, x, y, dx, dy):
+        self.start = time.time()
 
+    def on_deactivate(self, key):
+        try:
+            if key in self.COMBO:
+                self.current.add(key)
 
-def on_release(key):
-    try:
-        if key in COMBO:
-            current.remove(key)
-    except:
-        pass
-
-
-keyboard_listener = pynput.keyboard.Listener(on_press=on_press)
-mouse_listener = pynput.mouse.Listener()
-
-
-def main(type, deactive_time):
-    global keyboard_listener
-    global mouse_listener
-    global functions
-    global suppressed
-
-    functions = type
-
-    keyboard_listener.start()
-
-    while True:
-        global start
-        if time.time() - start >= deactive_time:
-            if "s" in type:
-                os.system("rundll32.exe powrprof.dll,SetSuspendState 0,1,0")
-            if "t" in type:
-                pass
-            if "u" in type or "w" in type:
-                if not suppressed:
-                    keyboard_listener.stop()
-                    keyboard_listener = pynput.keyboard.Listener(on_press=on_deactivate,
-                                                                 on_release=on_release,
-                                                                 suppress=True)
-                    keyboard_listener.start()
-                    suppressed = True
-            if "v" in type or "w" in type:
-                if not suppressed:
-                    keyboard_listener.stop()
-                    mouse_listener.stop()
-                    keyboard_listener = pynput.keyboard.Listener(on_press=on_deactivate,
-                                                                 on_release=on_release)
-                    mouse_listener = pynput.mouse.Listener(suppress=True)
-                    keyboard_listener.start()
+                # Check if hotkey is pressed
+                if all(k in self.current for k in self.COMBO):
+                    if self.mouse_listener.running:
+                        self.mouse_listener.stop()
+                    mouse_listener = pynput.mouse.Listener(on_move=self.on_move,
+                                                           on_click=self.on_click,
+                                                           on_scroll=self.on_scroll)  # Create new mouse listener
                     mouse_listener.start()
-                    print("Disabling mouse")
-                    suppressed = True
+                    if self.keyboard_listener.running:
+                        self.keyboard_listener.stop()  # Stop the listener from searching for the hotkey
+                    print("hotkey detected")
+                    self.keyboard_listener = pynput.keyboard.Listener(on_press=self.on_press)  # Look for any key press
+                    print("New keyboard listener has begun")
+                    self.keyboard_listener.start()
+                    self.start = time.time()
+                    self.suppressed = False
+        except Exception as e:
+            print(e)
+
+    def on_release(self, key):
+        try:
+            if key in self.COMBO:
+                self.current.remove(key)
+        except Exception:
+            pass
+
+    def run(self, type, deactive_time):
+        self.keyboard_listener.start()
+        self.mouse_listener.start()
+
+        while True:
+            global start
+            if time.time() - self.start >= deactive_time:
+                if self.keyboard_listener.running and not self.suppressed:
+                    self.keyboard_listener.stop()
+                if self.mouse_listener.running and not self.suppressed:
+                    self.mouse_listener.stop()
+
+                if "s" in type:
+                    os.system("rundll32.exe powrprof.dll,SetSuspendState 0,1,0")
+                    break
+                if "t" in type:
+                    pass
+                if "u" in type or "w" in type:
+                    if not self.suppressed:
+                        self.keyboard_listener = pynput.keyboard.Listener(on_press=self.on_deactivate,
+                                                                          on_release=self.on_release,
+                                                                          suppress=True)
+                        self.keyboard_listener.start()
+                        self.suppressed = True
+                if "v" in type or "w" in type:
+                    if not self.suppressed:
+                        self.keyboard_listener = pynput.keyboard.Listener(on_press=self.on_deactivate,
+                                                                          on_release=self.on_release)
+                        self.mouse_listener = pynput.mouse.Listener(suppress=True)
+                        self.keyboard_listener.start()
+                        self.mouse_listener.start()
+                        print("Disabling mouse")
+                        self.suppressed = True
 
 
 if __name__ == '__main__':
@@ -109,4 +108,5 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    main(args.type, args.time)
+    pc_controller = controller()
+    pc_controller.run(args.type, args.time)
