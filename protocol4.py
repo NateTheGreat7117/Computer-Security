@@ -22,8 +22,8 @@ class controller:
                                                     on_scroll=self.on_scroll)
 
         self.play_audio = True
-        self.muted = True
-        self.paused = True
+        self.muted = False
+        self.paused = False
 
     def on_press(self, key):
         self.start = time.time()
@@ -62,8 +62,10 @@ class controller:
                     self.suppressed = False
                     if self.muted:
                         pyautogui.press("volumemute")
+                        self.muted = False
                     if self.paused:
                         pyautogui.press("playpause")
+                        self.paused = False
         except Exception as e:
             print(e)
 
@@ -90,19 +92,13 @@ class controller:
                 if "s" in type:
                     os.system("rundll32.exe powrprof.dll,SetSuspendState 0,1,0")
                     break
-                if "t" in type:
-                    if volume != -1:
-                        pyautogui.press('volumedown', presses=50)
-                        x = math.floor(volume / 2)
-                        pyautogui.press('volumeup', presses=x)
-                    while self.play_audio:
-                        playsound('recordings/iphone_alarm.mp3')
                 if "u" in type or "w" in type:
                     if not self.suppressed:
                         self.keyboard_listener = pynput.keyboard.Listener(on_press=self.on_deactivate,
                                                                           on_release=self.on_release,
                                                                           suppress=True)
                         self.keyboard_listener.start()
+                        print("Disabling keyboard")
                         self.suppressed = True
                 if "v" in type or "w" in type:
                     if not self.suppressed:
@@ -114,12 +110,21 @@ class controller:
                         print("Disabling mouse")
                         self.suppressed = True
                 if "x" in type:
-                    pyautogui.press("volumemute")
-                    self.muted = True
+                    if not self.muted:
+                        pyautogui.press("volumemute")
+                        self.muted = True
                 if "y" in type:
-                    pyautogui.press("playpause")
-                    self.paused = True
-
+                    if not self.paused:
+                        pyautogui.press("playpause")
+                        self.paused = True
+                # This must be last because it creates a never ending for loop
+                if "t" in type:
+                    if volume != -1:
+                        pyautogui.press('volumedown', presses=50)
+                        x = math.floor(volume / 2)
+                        pyautogui.press('volumeup', presses=x)
+                    while self.play_audio:
+                        playsound('iphone alarm.mp3')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='''
